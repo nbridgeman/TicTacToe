@@ -10,7 +10,7 @@ public:
         _piece = '\0';
     }
 
-    void set_piece(char piece) {
+    Player(char piece) {
         _piece = piece;
     }
 
@@ -51,7 +51,11 @@ public:
             }
             cout << endl;
         }
-        cout << "  1 2 3" << endl << endl;
+        cout << "  ";
+        for (size_t col = 0; col < BOARD_DIM; col++) {
+            cout << col + 1 << " ";
+        }
+        cout << endl;
     }
 
     void place_piece(char piece, size_t row, size_t col) {
@@ -126,14 +130,6 @@ public:
         return false;
     }
 
-    bool is_winner() {
-        if (check_rows() || check_cols() || check_diags()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     bool is_tie() {
         for (size_t row = 0; row < BOARD_DIM; row++) {
             for (size_t col = 0; col < BOARD_DIM; col++) {
@@ -145,6 +141,17 @@ public:
         return true;
     }
 
+    short get_status() {
+        if (check_rows() || check_cols() || check_diags()) {
+            return 1;
+        } else if (is_tie()) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }
+
+
 private:
     char ** _layout;
 };
@@ -153,84 +160,65 @@ class TicTacToe {
 public:
     TicTacToe() {
         _board = new Board();
-        _player_one = Player();
-        _player_two =  Player();
-        _player_one.set_piece('X');
-        _player_two.set_piece('O');
-        player_one_turn = true;
+        _player_one = Player('X');
+        _player_two =  Player('O');
+        _current_player = &_player_one;
+        _other_player = &_player_two;
     }
 
     ~TicTacToe() {
         delete _board;
+        delete _current_player;
+        delete _other_player;
+    }
+
+    void swap_players() {
+        Player * temp = _current_player;
+        _current_player = _other_player;
+        _other_player = temp;
+        delete temp;
     }
 
     void take_turn() {
         size_t row = BOARD_DIM;
         size_t col = BOARD_DIM;
         while (row >= BOARD_DIM || col >= BOARD_DIM) {
+            cout << _current_player->get_piece() << " player, please input a row and column: ";
             cin >> col >> row;
             row--;
             col--;
         }
         while (_board->get_loc(row, col) != '-') {
+            cout << _current_player->get_piece() << " player, please input a row and column: ";
             cin >> row >> col;
         }
-        if (player_one_turn) {
-            _board->place_piece(_player_one.get_piece(), row, col);
-            player_one_turn = false;
-        } else {
-            _board->place_piece(_player_two.get_piece(), row, col);
-            player_one_turn = true;
+        _board->place_piece(_current_player->get_piece(), row, col);
+        _board->print_board();
+        swap_players();
+    }
+
+    void play() {
+        _board->print_board();
+        while (_board->get_status() == 0) {
+            take_turn();
         }
-        _board->print_board();
-    }
-
-    void print_board() {
-        _board->print_board();
-    }
-
-    bool is_winner() {
-        return _board->is_winner();
-    }
-
-    bool is_tie() {
-        return _board->is_tie();
+        if (_board->get_status() == 1) {
+            cout << _other_player->get_piece() << " player is the winner!" << endl;
+        } else {
+            cout << "It's a tie!" << endl;
+        }
     }
 
 private:
     Board * _board;
     Player _player_one;
     Player _player_two;
-    bool player_one_turn;
-};
-
-class Game {
-public:
-    Game() {
-        _TicTacToe = new TicTacToe();
-    }
-
-    ~Game() {
-        delete _TicTacToe;
-    }
-
-    void play() {
-        _TicTacToe->print_board();
-        _TicTacToe->take_turn();
-        while (!_TicTacToe->is_winner()) {
-            if (_TicTacToe->is_tie()) {
-                break;
-            }
-            _TicTacToe->take_turn();
-        }
-    }
-
-private:
-    TicTacToe * _TicTacToe;
+    Player * _current_player;
+    Player * _other_player;
 };
 
 int main() {
-    Game test = Game();
-    test.play();
+    TicTacToe game;
+    game.play();
     return 0;
 }
