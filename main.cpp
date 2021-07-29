@@ -1,4 +1,8 @@
+// One-Player TicTacToe
+
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 
 using namespace std;
 
@@ -8,18 +12,34 @@ class Player {
 public:
     Player() {
         _piece = '\0';
+        _is_player = true;
     }
 
     Player(char piece) {
         _piece = piece;
+        _is_player = true;
+    }
+
+    Player(char piece, bool is_player) {
+        _piece = piece;
+        _is_player = is_player;
     }
 
     char get_piece() {
         return _piece;
     }
 
+    bool is_player() {
+        return _is_player;
+    }
+
+    void set_comp() {
+        _is_player = false;
+    }
+
 private:
     char _piece;
+    bool _is_player;
 };
 
 class Board {
@@ -179,9 +199,19 @@ public:
         delete temp;
     }
 
+    void comp_take_turn() {
+        size_t row = rand() % 3, col = rand() % 3;
+        while (_board->get_loc(row, col) != '-') {
+            row = rand() % 3;
+            col = rand() % 3;
+        }
+        _board->place_piece(_current_player->get_piece(), row, col);
+        _board->print_board();
+        swap_players();
+    }
+
     void take_turn() {
-        size_t row = BOARD_DIM;
-        size_t col = BOARD_DIM;
+        size_t row = BOARD_DIM, col = BOARD_DIM;
         while (row >= BOARD_DIM || col >= BOARD_DIM) {
             cout << _current_player->get_piece() << " player, please input a row and column: ";
             cin >> col >> row;
@@ -197,10 +227,42 @@ public:
         swap_players();
     }
 
+    void set_gamemode() {
+        short num_players = 0;
+        char user_piece = '\0';
+        cout << "1 or 2 players? ";
+        cin >> num_players;
+        switch (num_players) {
+            case 1:
+                while (true) {
+                    if (user_piece == 'X') {
+                        _player_two.set_comp();
+                        break;
+                    } else if (user_piece == 'O') {
+                        _player_one.set_comp();
+                        break;
+                    } else {
+                        cout << "Play as 'X' or 'O': ";
+                        cin >> user_piece;
+                    }
+                }
+                break;
+            case 2:
+                break;
+            default:
+                cout << "Please input '1' or '2': ";
+        }
+    }
+
     void play() {
+        set_gamemode();
         _board->print_board();
         while (_board->get_status() == 0) {
-            take_turn();
+            if (_current_player->is_player()) {
+                take_turn();
+            } else {
+                comp_take_turn();
+            }
         }
         if (_board->get_status() == 1) {
             cout << _other_player->get_piece() << " player is the winner!" << endl;
@@ -218,6 +280,7 @@ private:
 };
 
 int main() {
+    srand(time(0));
     TicTacToe game;
     game.play();
     return 0;
